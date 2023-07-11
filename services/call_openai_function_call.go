@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"github.com/sashabaranov/go-openai"
 	"github.com/sashabaranov/go-openai/jsonschema"
 	"os"
@@ -12,7 +11,7 @@ import (
 var client *openai.Client
 var runOnce sync.Once
 
-func CallOpenAIFunctionCall(userPrompt string) {
+func GetFunctionArgumentsFromOpenAI(userPrompt string) (openai.ChatCompletionResponse, error) {
 	getClient()
 
 	resp, err := client.CreateChatCompletion(
@@ -27,17 +26,21 @@ func CallOpenAIFunctionCall(userPrompt string) {
 			},
 			Functions: []openai.FunctionDefinition{
 				{
-					Name:        "create_azure_resource",
+					Name:        "create_cloud_resource",
 					Description: "Create an azure resource",
 					Parameters: RequestParameters{
 						Type: string(jsonschema.Object),
 						Properties: RequestParameterProperty{
 							TerraformResourceName: TFResourceName{
 								Type:        "string",
-								Description: "The terraform resource name, e.g. azurerm_resource_group",
+								Description: "The terraform resource name, e.g. azurerm_resource_group, aws_vpc, google_container_aws_cluster",
+							},
+							TerraformCloudProvider: TFCloudType{
+								Type: string(jsonschema.String),
+								Enum: []string{"Azure", "GCP", "AWS"},
 							},
 						},
-						Required: []string{"terraform_resource_name"},
+						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},
 					},
 				},
 			},
@@ -45,11 +48,62 @@ func CallOpenAIFunctionCall(userPrompt string) {
 	)
 
 	if err != nil {
-		fmt.Printf("ChatCompletion error: %v\n", err)
-		return
+		return openai.ChatCompletionResponse{}, err
 	}
 
-	fmt.Println(resp.Choices[0].Message.FunctionCall)
+	return resp, nil
+}
+
+func SummarizeResponseFromOpenAI(userPrompt string, assistantFunctionCall *openai.FunctionCall, functionOutput string) (string, error) {
+	getClient()
+
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: openai.GPT3Dot5Turbo,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: userPrompt,
+				},
+				{
+					Role:         openai.ChatMessageRoleAssistant,
+					FunctionCall: assistantFunctionCall,
+				},
+				{
+					Role:    openai.ChatMessageRoleFunction,
+					Name:    "create_cloud_resource",
+					Content: functionOutput,
+				},
+			},
+			Functions: []openai.FunctionDefinition{
+				{
+					Name:        "create_cloud_resource",
+					Description: "Create an azure resource",
+					Parameters: RequestParameters{
+						Type: string(jsonschema.Object),
+						Properties: RequestParameterProperty{
+							TerraformResourceName: TFResourceName{
+								Type:        "string",
+								Description: "The terraform resource name, e.g. azurerm_resource_group, aws_vpc, google_container_aws_cluster",
+							},
+							TerraformCloudProvider: TFCloudType{
+								Type: string(jsonschema.String),
+								Enum: []string{"Azure", "GCP", "AWS"},
+							},
+						},
+						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},
+					},
+				},
+			},
+		},
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	return resp.Choices[0].Message.Content, nil
 }
 
 func getClient() {

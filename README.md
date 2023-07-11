@@ -1,6 +1,6 @@
 # go-terra-bot
 
-`go-terra-bot` is a command-line tool that allows you to create cloud resources using OpenAI and Terraform with just one line. It provides a simple and efficient way to interact with cloud services.
+`go-terra-bot` is a command-line tool that allows you to create basic cloud resources using OpenAI and Terraform with just one line. It provides a simple and efficient way to interact with cloud services.
 
 ## Installation
 

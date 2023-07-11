@@ -18,7 +18,8 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		services.CallOpenAIFunctionCall(userPrompt)
+
+		services.CreateResource(userPrompt)
 	},
 	Example: `
 # Example 1: Add a task
