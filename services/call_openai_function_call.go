@@ -27,16 +27,16 @@ func GetFunctionArgumentsFromOpenAI(userPrompt string) (openai.ChatCompletionRes
 			Functions: []openai.FunctionDefinition{
 				{
 					Name:        "create_cloud_resource",
-					Description: "Create an azure resource",
-					Parameters: RequestParameters{
-						Type: string(jsonschema.Object),
-						Properties: RequestParameterProperty{
-							TerraformResourceName: TFResourceName{
-								Type:        "string",
+					Description: "Create a cloud resource",
+					Parameters: jsonschema.Definition{
+						Type: jsonschema.Object,
+						Properties: map[string]jsonschema.Definition{
+							"terraform_resource_name": {
+								Type:        jsonschema.String,
 								Description: "The terraform resource name, e.g. azurerm_resource_group, aws_vpc, google_container_aws_cluster",
 							},
-							TerraformCloudProvider: TFCloudType{
-								Type: string(jsonschema.String),
+							"terraform_cloud_Provider": {
+								Type: jsonschema.String,
 								Enum: []string{"Azure", "GCP", "AWS"},
 							},
 						},
@@ -79,16 +79,16 @@ func SummarizeResponseFromOpenAI(userPrompt string, assistantFunctionCall *opena
 			Functions: []openai.FunctionDefinition{
 				{
 					Name:        "create_cloud_resource",
-					Description: "Create an azure resource",
-					Parameters: RequestParameters{
-						Type: string(jsonschema.Object),
-						Properties: RequestParameterProperty{
-							TerraformResourceName: TFResourceName{
-								Type:        "string",
+					Description: "Create a cloud resource",
+					Parameters: jsonschema.Definition{
+						Type: jsonschema.Object,
+						Properties: map[string]jsonschema.Definition{
+							"terraform_resource_name": {
+								Type:        jsonschema.String,
 								Description: "The terraform resource name, e.g. azurerm_resource_group, aws_vpc, google_container_aws_cluster",
 							},
-							TerraformCloudProvider: TFCloudType{
-								Type: string(jsonschema.String),
+							"terraform_cloud_Provider": {
+								Type: jsonschema.String,
 								Enum: []string{"Azure", "GCP", "AWS"},
 							},
 						},
