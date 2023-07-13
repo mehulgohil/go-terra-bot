@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func CreateResource(userPrompt string) {
+func CreateResource(userPrompt string, dryRun bool) {
 	openAiResponse, err := GetFunctionArgumentsFromOpenAI(userPrompt)
 	if err != nil {
 		aiSummary, err := SummarizeResponseFromOpenAI(userPrompt, openAiResponse.Choices[0].Message.FunctionCall, err.Error())
@@ -20,14 +20,15 @@ func CreateResource(userPrompt string) {
 	var jsonMap FunctionCallResponseArguments
 	json.Unmarshal([]byte(openAiResponse.Choices[0].Message.FunctionCall.Arguments), &jsonMap)
 
-	azRG := AzureResourceGroup{
-		ResourceGroupName:     "rg-demo-001",
-		ResourceGroupLocation: "West Europe",
+	azRG := map[string]string{
+		"ResourceGroupName":     "rg-demo-001",
+		"ResourceGroupLocation": "West Europe",
+		"AWS_VPC_CIDR_BLOCK":    "10.0.0.0/16",
 	}
 	azRGMarshed, _ := json.Marshal(azRG)
 
 	var outputMessage string
-	err = CreateCloudResource(jsonMap.TerraformCloudType, jsonMap.TerraformResourceName, azRG)
+	err = CreateCloudResource(jsonMap.TerraformCloudType, jsonMap.TerraformResourceName, azRG, dryRun)
 	if err != nil {
 		outputMessage = "error creating resource. Reason - " + err.Error()
 	} else {

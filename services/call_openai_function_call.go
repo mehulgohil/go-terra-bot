@@ -37,7 +37,7 @@ func GetFunctionArgumentsFromOpenAI(userPrompt string) (openai.ChatCompletionRes
 							},
 							"terraform_cloud_Provider": {
 								Type: jsonschema.String,
-								Enum: []string{"Azure", "GCP", "AWS"},
+								Enum: []string{"Azure", "AWS"},
 							},
 						},
 						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},
@@ -89,7 +89,7 @@ func SummarizeResponseFromOpenAI(userPrompt string, assistantFunctionCall *opena
 							},
 							"terraform_cloud_Provider": {
 								Type: jsonschema.String,
-								Enum: []string{"Azure", "GCP", "AWS"},
+								Enum: []string{"Azure", "AWS"},
 							},
 						},
 						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},

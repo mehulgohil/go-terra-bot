@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/mehulgohil/go-terra-bot/services"
 	"log"
 	"os"
@@ -19,7 +20,16 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		services.CreateResource(userPrompt)
+		dryRun, err := cmd.Flags().GetBool("dry-run")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if dryRun {
+			fmt.Println("Running as `dry-run`. Resources wont be created")
+		}
+
+		services.InitializeTerraformFolders()
+		services.CreateResource(userPrompt, dryRun)
 	},
 	Example: `
 # Example 1: Add a task
@@ -38,6 +48,9 @@ func init() {
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 
 	rootFlags := rootCmd.Flags()
-	rootFlags.StringP("prompt", "p", "", "prompt to create a cloud resource")
+	rootFlags.StringP("prompt", "p", "", "Prompt to create a cloud resource")
 	cobra.MarkFlagRequired(rootFlags, "prompt")
+
+	// TODO: change the default value to false, once we have terraform cmds in place
+	rootFlags.Bool("dry-run", true, "To perform a dry run. TF files will be created. Resources wont be created in cloud infra.")
 }
