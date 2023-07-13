@@ -14,6 +14,12 @@ var rootCmd = &cobra.Command{
 	Use:   "go-terra-bot",
 	Short: "Create cloud resource with the help open ai and terraform with just one line",
 	Long:  `Create cloud resource with the help open ai and terraform with just one line`,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		_, ok := os.LookupEnv("OPENAPI_KEY")
+		if !ok {
+			log.Fatal("missing OPENAPI_KEY environment variable")
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		userPrompt, err := cmd.Flags().GetString("prompt")
 		if err != nil {
