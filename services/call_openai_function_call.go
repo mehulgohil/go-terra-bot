@@ -33,11 +33,11 @@ func GetFunctionArgumentsFromOpenAI(userPrompt string) (openai.ChatCompletionRes
 						Properties: map[string]jsonschema.Definition{
 							"terraform_resource_name": {
 								Type:        jsonschema.String,
-								Description: "The terraform resource name, e.g. azurerm_resource_group, aws_vpc, google_container_aws_cluster",
+								Description: "The terraform resource name, e.g. azurerm_resource_group, aws_vpc",
 							},
 							"terraform_cloud_Provider": {
 								Type: jsonschema.String,
-								Enum: []string{"Azure", "AWS"},
+								Enum: []string{Azure, AWS},
 							},
 						},
 						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},
@@ -85,11 +85,11 @@ func SummarizeResponseFromOpenAI(userPrompt string, assistantFunctionCall *opena
 						Properties: map[string]jsonschema.Definition{
 							"terraform_resource_name": {
 								Type:        jsonschema.String,
-								Description: "The terraform resource name, e.g. azurerm_resource_group, aws_vpc, google_container_aws_cluster",
+								Description: "The terraform resource name, e.g. azurerm_resource_group, aws_vpc",
 							},
 							"terraform_cloud_Provider": {
 								Type: jsonschema.String,
-								Enum: []string{"Azure", "AWS"},
+								Enum: []string{Azure, AWS},
 							},
 						},
 						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},

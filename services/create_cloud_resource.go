@@ -17,13 +17,22 @@ import (
 
 const (
 	goTerraBotPackageName = "github.com/mehulgohil/go-terra-bot"
+	Azure                 = "Azure"
+	AWS                   = "AWS"
 )
 
-var supportedResource = []string{"azurerm_resource_group", "aws_vpc"}
-var supportedProvider = []string{"Azure", "AWS"}
+var supportedResource = make(map[string][]string)
+
+func init() {
+	supportedResource[Azure] = []string{"azurerm_resource_group"}
+	supportedResource[AWS] = []string{"aws_vpc"}
+}
+
+var supportedProvider = []string{Azure, AWS}
 
 func CreateCloudResource(cloudProvider string, tfResourceName string, resourceParams interface{}, dryRun bool) error {
 	fmt.Println(fmt.Sprintf("Trying to create `%s` in %s...", tfResourceName, cloudProvider))
+
 	pkgDir, err := getPackageDirPath(goTerraBotPackageName)
 	if err != nil {
 		return fmt.Errorf("couldn't find the `go-terra-bot` pkg installed in local: %w", err)
@@ -39,8 +48,8 @@ func CreateCloudResource(cloudProvider string, tfResourceName string, resourcePa
 		return fmt.Errorf("unsupported cloud provider. Supported providers are %s", strings.Join(supportedProvider, ","))
 	}
 
-	if !contains(supportedResource, tfResourceName) {
-		return fmt.Errorf("unsupported cloud resource. Supported resources are %s", strings.Join(supportedResource, ","))
+	if !contains(supportedResource[cloudProvider], tfResourceName) {
+		return fmt.Errorf("unsupported cloud resource. Supported resources are %s", strings.Join(supportedResource[cloudProvider], ","))
 	}
 
 	tmpFile := fmt.Sprintf("%s/templates/%s/%s.tmpl", slashedPkgDir, cloudProvider, tfResourceName)
@@ -119,18 +128,18 @@ func createAndValidateTFFiles(cloudProvider string, pkgDir string, dryRun bool) 
 	// if not a dry run, we will check all env vars
 	if !dryRun {
 		switch cloudProvider {
-		case "AWS":
+		case AWS:
 			awsEnvVars := []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION"}
 			for _, envVar := range awsEnvVars {
 				if _, ok := os.LookupEnv(envVar); !ok {
-					return fmt.Errorf("missing %s environment variable for AWS", envVar)
+					return fmt.Errorf("missing %s environment variable for %s", envVar, AWS)
 				}
 			}
-		case "Azure":
+		case Azure:
 			azureEnvVars := []string{"ARM_CLIENT_ID", "ARM_CLIENT_SECRET", "ARM_TENANT_ID", "ARM_SUBSCRIPTION_ID"}
 			for _, envVar := range azureEnvVars {
 				if _, ok := os.LookupEnv(envVar); !ok {
-					return fmt.Errorf("missing %s environment variable for Azure", envVar)
+					return fmt.Errorf("missing %s environment variable for %s", envVar, Azure)
 				}
 			}
 		}
