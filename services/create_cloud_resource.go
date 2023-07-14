@@ -1,7 +1,13 @@
 package services
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/hc-install/product"
+	"github.com/hashicorp/hc-install/releases"
+	"github.com/hashicorp/terraform-exec/tfexec"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,31 +23,34 @@ var supportedResource = []string{"azurerm_resource_group", "aws_vpc"}
 var supportedProvider = []string{"Azure", "AWS"}
 
 func CreateCloudResource(cloudProvider string, tfResourceName string, resourceParams interface{}, dryRun bool) error {
+	fmt.Println(fmt.Sprintf("Trying to create `%s` in %s...", tfResourceName, cloudProvider))
 	pkgDir, err := getPackageDirPath(goTerraBotPackageName)
 	if err != nil {
-		return errors.New("couldn't find the `go-terra-bot` pkg installed in local: " + err.Error())
+		return fmt.Errorf("couldn't find the `go-terra-bot` pkg installed in local: %w", err)
 	}
-	slashedPkgDir := filepath.ToSlash(pkgDir)
 
+	slashedPkgDir := filepath.ToSlash(pkgDir)
 	err = createAndValidateTFFiles(cloudProvider, slashedPkgDir, dryRun)
 	if err != nil {
 		return errors.New("error creating terraform folder structure: " + err.Error())
 	}
+
 	if !contains(supportedProvider, cloudProvider) {
-		return errors.New("Unsupported cloud provider. Supported providers are " + strings.Join(supportedResource, ","))
+		return fmt.Errorf("unsupported cloud provider. Supported providers are %s", strings.Join(supportedProvider, ","))
 	}
+
 	if !contains(supportedResource, tfResourceName) {
-		return errors.New("Unsupported cloud resource. Supported resources are " + strings.Join(supportedResource, ","))
+		return fmt.Errorf("unsupported cloud resource. Supported resources are %s", strings.Join(supportedResource, ","))
 	}
 
-	var tmpFile = slashedPkgDir + "/templates/" + cloudProvider + "/" + tfResourceName + ".tmpl"
-
+	tmpFile := fmt.Sprintf("%s/templates/%s/%s.tmpl", slashedPkgDir, cloudProvider, tfResourceName)
 	tmpl, err := template.ParseFiles(tmpFile)
 	if err != nil {
 		return err
 	}
 
-	file, err := os.Create("terrabot-tf/" + cloudProvider + "/" + tfResourceName + ".tf")
+	filePath := fmt.Sprintf("terrabot-tf/%s/%s.tf", cloudProvider, tfResourceName)
+	file, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
@@ -52,9 +61,55 @@ func CreateCloudResource(cloudProvider string, tfResourceName string, resourcePa
 		return err
 	}
 
-	//terraform init
-	//terraform plan
-	//terraform apply
+	// if dry run, we exit after creating tf files
+	if dryRun {
+		return nil
+	}
+
+	tf, err := installAndConfigureTerraform(cloudProvider)
+	if err != nil {
+		return err
+	}
+
+	return applyTerraformChanges(tf)
+}
+
+func installAndConfigureTerraform(cloudProvider string) (*tfexec.Terraform, error) {
+	installer := &releases.ExactVersion{
+		Product: product.Terraform,
+		Version: version.Must(version.NewVersion("1.0.6")),
+	}
+	execPath, err := installer.Install(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("couldn't install terraform: %w", err)
+	}
+
+	terraformWorkingDir := fmt.Sprintf("terrabot-tf/%s", cloudProvider)
+	tf, err := tfexec.NewTerraform(terraformWorkingDir, execPath)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't initialize terraform object: %w", err)
+	}
+
+	err = tf.Init(context.Background(), tfexec.Upgrade(true))
+	if err != nil {
+		return nil, fmt.Errorf("couldn't run terraform init: %w", err)
+	}
+
+	return tf, nil
+}
+
+func applyTerraformChanges(tf *tfexec.Terraform) error {
+	plan, err := tf.Plan(context.Background())
+	if err != nil {
+		return fmt.Errorf("couldn't run terraform plan: %w", err)
+	}
+
+	if plan {
+		err = tf.Apply(context.Background())
+		if err != nil {
+			return fmt.Errorf("couldn't run terraform apply: %w", err)
+		}
+	}
 
 	return nil
 }
@@ -65,51 +120,36 @@ func createAndValidateTFFiles(cloudProvider string, pkgDir string, dryRun bool) 
 	if !dryRun {
 		switch cloudProvider {
 		case "AWS":
-			_, ok := os.LookupEnv("AWS_ACCESS_KEY_ID")
-			if !ok {
-				return errors.New("missing AWS_ACCESS_KEY_ID environment variable for AWS")
-			}
-			_, ok = os.LookupEnv("AWS_SECRET_ACCESS_KEY")
-			if !ok {
-				return errors.New("missing AWS_SECRET_ACCESS_KEY environment variable for AWS")
-			}
-			_, ok = os.LookupEnv("AWS_REGION")
-			if !ok {
-				return errors.New("missing AWS_REGION environment variable for AWS")
+			awsEnvVars := []string{"AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION"}
+			for _, envVar := range awsEnvVars {
+				if _, ok := os.LookupEnv(envVar); !ok {
+					return fmt.Errorf("missing %s environment variable for AWS", envVar)
+				}
 			}
 		case "Azure":
-			_, ok := os.LookupEnv("ARM_CLIENT_ID")
-			if !ok {
-				return errors.New("missing ARM_CLIENT_ID environment variable for Azure")
-			}
-			_, ok = os.LookupEnv("ARM_CLIENT_SECRET")
-			if !ok {
-				return errors.New("missing ARM_CLIENT_SECRET environment variable for Azure")
-			}
-			_, ok = os.LookupEnv("ARM_TENANT_ID")
-			if !ok {
-				return errors.New("missing ARM_TENANT_ID environment variable for Azure")
-			}
-			_, ok = os.LookupEnv("ARM_SUBSCRIPTION_ID")
-			if !ok {
-				return errors.New("missing ARM_SUBSCRIPTION_ID environment variable for Azure")
+			azureEnvVars := []string{"ARM_CLIENT_ID", "ARM_CLIENT_SECRET", "ARM_TENANT_ID", "ARM_SUBSCRIPTION_ID"}
+			for _, envVar := range azureEnvVars {
+				if _, ok := os.LookupEnv(envVar); !ok {
+					return fmt.Errorf("missing %s environment variable for Azure", envVar)
+				}
 			}
 		}
 	}
 
-	err := os.Mkdir("terrabot-tf/"+cloudProvider, os.ModePerm)
-	if err != nil && !strings.Contains(err.Error(), "Cannot create a file when that file already exists") {
+	terrabotDir := filepath.Join("terrabot-tf", cloudProvider)
+	err := os.Mkdir(terrabotDir, os.ModePerm)
+	if err != nil && !os.IsExist(err) {
 		return err
 	}
 
-	file, err := os.Create("terrabot-tf/" + cloudProvider + "/auth.tf")
+	filePath := filepath.Join(terrabotDir, "auth.tf")
+	file, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	var tmpFile = pkgDir + "/templates/" + cloudProvider + "/auth.tmpl"
-
+	tmpFile := filepath.Join(pkgDir, "templates", cloudProvider, "auth.tmpl")
 	tmpl, err := template.ParseFiles(tmpFile)
 	if err != nil {
 		return err

@@ -9,6 +9,7 @@ import (
 func CreateResource(userPrompt string, dryRun bool) {
 	openAiResponse, err := GetFunctionArgumentsFromOpenAI(userPrompt)
 	if err != nil {
+		fmt.Println(err)
 		aiSummary, err := SummarizeResponseFromOpenAI(userPrompt, openAiResponse.Choices[0].Message.FunctionCall, err.Error())
 		if err != nil {
 			log.Fatal(err)
@@ -30,6 +31,7 @@ func CreateResource(userPrompt string, dryRun bool) {
 	var outputMessage string
 	err = CreateCloudResource(jsonMap.TerraformCloudType, jsonMap.TerraformResourceName, azRG, dryRun)
 	if err != nil {
+		fmt.Println(err)
 		outputMessage = "error creating resource. Reason - " + err.Error()
 	} else {
 		outputMessage = "successfully created resource with details - " + string(azRGMarshed)
@@ -37,6 +39,7 @@ func CreateResource(userPrompt string, dryRun bool) {
 
 	aiSummary, err := SummarizeResponseFromOpenAI(userPrompt, openAiResponse.Choices[0].Message.FunctionCall, outputMessage)
 	if err != nil {
+		fmt.Println(err)
 		log.Fatal(err)
 	}
 	fmt.Println(aiSummary)

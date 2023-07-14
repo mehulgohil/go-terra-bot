@@ -57,6 +57,5 @@ func init() {
 	rootFlags.StringP("prompt", "p", "", "Prompt to create a cloud resource")
 	cobra.MarkFlagRequired(rootFlags, "prompt")
 
-	// TODO: change the default value to false, once we have terraform cmds in place
-	rootFlags.Bool("dry-run", true, "To perform a dry run. TF files will be created. Resources wont be created in cloud infra.")
+	rootFlags.Bool("dry-run", false, "To perform a dry run. TF files will be created. Resources wont be created in cloud infra.")
 }
