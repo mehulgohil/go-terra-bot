@@ -3,23 +3,25 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sashabaranov/go-openai"
 	"log"
 )
 
 func CreateResource(userPrompt string, dryRun bool) {
 	openAiResponse, err := GetFunctionArgumentsFromOpenAI(userPrompt)
 	if err != nil {
-		fmt.Println(err)
-		aiSummary, err := SummarizeResponseFromOpenAI(userPrompt, openAiResponse.Choices[0].Message.FunctionCall, err.Error())
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(aiSummary)
-		return
+		handleCLIResponse(userPrompt, nil, "error calling openapi function call: "+err.Error())
 	}
 
 	var jsonMap FunctionCallResponseArguments
-	json.Unmarshal([]byte(openAiResponse.Choices[0].Message.FunctionCall.Arguments), &jsonMap)
+	if len(openAiResponse.Choices) != 0 && openAiResponse.Choices[0].Message.FunctionCall != nil {
+		err := json.Unmarshal([]byte(openAiResponse.Choices[0].Message.FunctionCall.Arguments), &jsonMap)
+		if err != nil {
+			handleCLIResponse(userPrompt, openAiResponse.Choices[0].Message.FunctionCall, "error unmarshalling the openapi function response: "+err.Error())
+		}
+	} else {
+		handleCLIResponse(userPrompt, nil, "please provide a valid prompt. For example `create an aws vpc`")
+	}
 
 	azRG := map[string]string{
 		"ResourceGroupName":     "rg-demo-001",
@@ -31,16 +33,19 @@ func CreateResource(userPrompt string, dryRun bool) {
 	var outputMessage string
 	err = CreateCloudResource(jsonMap.TerraformCloudType, jsonMap.TerraformResourceName, azRG, dryRun)
 	if err != nil {
-		fmt.Println(err)
 		outputMessage = "error creating resource. Reason - " + err.Error()
 	} else {
 		outputMessage = "successfully created resource with details - " + string(azRGMarshed)
 	}
 
-	aiSummary, err := SummarizeResponseFromOpenAI(userPrompt, openAiResponse.Choices[0].Message.FunctionCall, outputMessage)
+	handleCLIResponse(userPrompt, openAiResponse.Choices[0].Message.FunctionCall, outputMessage)
+}
+
+func handleCLIResponse(userPrompt string, funcCall *openai.FunctionCall, output string) {
+	aiSummary, err := SummarizeResponseFromOpenAI(userPrompt, funcCall, output)
 	if err != nil {
-		fmt.Println(err)
 		log.Fatal(err)
 	}
 	fmt.Println(aiSummary)
+	return
 }
