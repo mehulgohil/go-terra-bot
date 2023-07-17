@@ -39,6 +39,13 @@ func GetFunctionArgumentsFromOpenAI(userPrompt string) (openai.ChatCompletionRes
 								Type: jsonschema.String,
 								Enum: []string{Azure, AWS},
 							},
+							//"extra_params": {
+							//	Type:        jsonschema.Array,
+							//	Description: "Extra params for resource creation, e.g. if prompt is `create an azure resource group with name test and location West Europe`, extra_params should be ['name_test', 'location_westeurope']. The location here is not the actual azure display name but the actual name of the region or location. The name and location should be valid with respect to `terraform_resource_name`",
+							//	Items: &jsonschema.Definition{
+							//		Type: jsonschema.String,
+							//	},
+							//},
 						},
 						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},
 					},
@@ -91,6 +98,13 @@ func SummarizeResponseFromOpenAI(userPrompt string, assistantFunctionCall *opena
 								Type: jsonschema.String,
 								Enum: []string{Azure, AWS},
 							},
+							//"extra_params": {
+							//	Type:        jsonschema.Array,
+							//	Description: "Extra params for resource creation, e.g. if prompt is `create an azure resource group with name test and location West Europe`, extra_params should be ['name_test', 'location_westeurope']. The location here is not the actual azure display name but the actual name of the region or location",
+							//	Items: &jsonschema.Definition{
+							//		Type: jsonschema.String,
+							//	},
+							//},
 						},
 						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},
 					},

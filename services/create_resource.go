@@ -8,6 +8,10 @@ import (
 )
 
 func CreateResource(userPrompt string, dryRun bool) {
+	//var ResourceFields = make(map[string][]string)
+	//ResourceFields["azurerm_resource_group"] = []string{"name", "location"}
+	//ResourceFields["aws_vpc"] = []string{"cidr"}
+
 	openAiResponse, err := GetFunctionArgumentsFromOpenAI(userPrompt)
 	if err != nil {
 		handleCLIResponse(userPrompt, nil, "error calling openapi function call: "+err.Error())
