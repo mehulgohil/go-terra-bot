@@ -27,10 +27,13 @@ func CreateResource(userPrompt string, dryRun bool) {
 		handleCLIResponse(userPrompt, nil, "please provide a valid prompt. For example `create an aws vpc`")
 	}
 
-	azRG := map[string]string{
-		"ResourceGroupName":     "rg-demo-001",
-		"ResourceGroupLocation": "West Europe",
-		"AWS_VPC_CIDR_BLOCK":    "10.0.0.0/16",
+	azRG := map[string]string{}
+	switch jsonMap.TerraformResourceName {
+	case "aws_vpc":
+		azRG["AWS_VPC_CIDR_BLOCK"] = "10.0.0.0/16"
+	case "azurerm_resource_group":
+		azRG["ResourceGroupName"] = "rg-demo-001"
+		azRG["ResourceGroupLocation"] = "West Europe"
 	}
 	azRGMarshed, _ := json.Marshal(azRG)
 

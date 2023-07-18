@@ -44,3 +44,10 @@ If you want to create "Azure" resources, the following environment variables are
 - ARM_CLIENT_SECRET: Azure AD application client secret.
 - ARM_TENANT_ID: Azure AD tenant ID.
 - ARM_SUBSCRIPTION_ID: Azure subscription ID.
+
+## Current Supported Resources
+### AWS
+- aws_vpc
+
+### Azure
+- azurerm_resource_group
