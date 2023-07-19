@@ -8,10 +8,6 @@ import (
 )
 
 func CreateResource(userPrompt string, dryRun bool) {
-	//var ResourceFields = make(map[string][]string)
-	//ResourceFields["azurerm_resource_group"] = []string{"name", "location"}
-	//ResourceFields["aws_vpc"] = []string{"cidr"}
-
 	openAiResponse, err := GetFunctionArgumentsFromOpenAI(userPrompt)
 	if err != nil {
 		handleCLIResponse(userPrompt, nil, "error calling openapi function call: "+err.Error())
@@ -26,14 +22,28 @@ func CreateResource(userPrompt string, dryRun bool) {
 	} else {
 		handleCLIResponse(userPrompt, nil, "please provide a valid prompt. For example `create an aws vpc`")
 	}
-
+	fmt.Println(jsonMap.ExtraParams)
 	azRG := map[string]string{}
+	//add default values
 	switch jsonMap.TerraformResourceName {
 	case "aws_vpc":
-		azRG["AWS_VPC_CIDR_BLOCK"] = "10.0.0.0/16"
+		azRG["cidr_block"] = "10.0.0.0/16"
+		for _, eachParam := range jsonMap.ExtraParams {
+			if eachParam.Name == "cidr_block" {
+				azRG["cidr_block"] = eachParam.Value
+			}
+		}
 	case "azurerm_resource_group":
-		azRG["ResourceGroupName"] = "rg-demo-001"
-		azRG["ResourceGroupLocation"] = "West Europe"
+		azRG["name"] = "rg-demo-001"
+		azRG["location"] = "West Europe"
+		for _, eachParam := range jsonMap.ExtraParams {
+			if eachParam.Name == "name" {
+				azRG["name"] = eachParam.Value
+			}
+			if eachParam.Name == "location" {
+				azRG["location"] = eachParam.Value
+			}
+		}
 	}
 	azRGMarshed, _ := json.Marshal(azRG)
 

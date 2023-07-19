@@ -44,10 +44,12 @@ func CreateCloudResource(cloudProvider string, tfResourceName string, resourcePa
 		return errors.New("error creating terraform folder structure: " + err.Error())
 	}
 
+	// check supported cloud provider
 	if !contains(supportedProvider, cloudProvider) {
 		return fmt.Errorf("unsupported cloud provider. Supported providers are %s", strings.Join(supportedProvider, ","))
 	}
 
+	// check supported resources
 	if !contains(supportedResource[cloudProvider], tfResourceName) {
 		return fmt.Errorf("unsupported cloud resource. Supported resources are %s", strings.Join(supportedResource[cloudProvider], ","))
 	}

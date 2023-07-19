@@ -39,13 +39,23 @@ func GetFunctionArgumentsFromOpenAI(userPrompt string) (openai.ChatCompletionRes
 								Type: jsonschema.String,
 								Enum: []string{Azure, AWS},
 							},
-							//"extra_params": {
-							//	Type:        jsonschema.Array,
-							//	Description: "Extra params for resource creation, e.g. if prompt is `create an azure resource group with name test and location West Europe`, extra_params should be ['name_test', 'location_westeurope']. The location here is not the actual azure display name but the actual name of the region or location. The name and location should be valid with respect to `terraform_resource_name`",
-							//	Items: &jsonschema.Definition{
-							//		Type: jsonschema.String,
-							//	},
-							//},
+							"extra_params": {
+								Type:        jsonschema.Array,
+								Description: "An array of object to pass to function for configuration arguments  of the terraform resource type, e.g. if prompt is `create an azure resource group test in West India`, extra_params should be [{'name': 'name', 'value': 'test'}, {'name':'location', 'value': 'westindia'}, similarly append any other configuration arguments provided by user. The configuration arguments provided should be valid for that terraform resource type.",
+								Items: &jsonschema.Definition{
+									Type: jsonschema.Object,
+									Properties: map[string]jsonschema.Definition{
+										"name": {
+											Type:        jsonschema.String,
+											Description: "terraform configuration argument key field",
+										},
+										"value": {
+											Type:        jsonschema.String,
+											Description: "terraform configuration argument value field",
+										},
+									},
+								},
+							},
 						},
 						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},
 					},
@@ -98,13 +108,23 @@ func SummarizeResponseFromOpenAI(userPrompt string, assistantFunctionCall *opena
 								Type: jsonschema.String,
 								Enum: []string{Azure, AWS},
 							},
-							//"extra_params": {
-							//	Type:        jsonschema.Array,
-							//	Description: "Extra params for resource creation, e.g. if prompt is `create an azure resource group with name test and location West Europe`, extra_params should be ['name_test', 'location_westeurope']. The location here is not the actual azure display name but the actual name of the region or location",
-							//	Items: &jsonschema.Definition{
-							//		Type: jsonschema.String,
-							//	},
-							//},
+							"extra_params": {
+								Type:        jsonschema.Array,
+								Description: "An array of dictionary to pass to function for configuration arguments  of the terraform resource type, e.g. if prompt is `create a resource group test in West India`, extra_params should be [{'name': 'name', 'value': 'test'}, {'name':'location', 'value': 'westindia'}, similarly append any other configuration arguments provided by user. The configuration arguments provided should be valid for that terraform resource type.",
+								Items: &jsonschema.Definition{
+									Type: jsonschema.Object,
+									Properties: map[string]jsonschema.Definition{
+										"name": {
+											Type:        jsonschema.String,
+											Description: "terraform configuration argument key field",
+										},
+										"value": {
+											Type:        jsonschema.String,
+											Description: "terraform configuration argument value field",
+										},
+									},
+								},
+							},
 						},
 						Required: []string{"terraform_resource_name", "terraform_cloud_provider"},
 					},

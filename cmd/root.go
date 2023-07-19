@@ -31,15 +31,24 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if dryRun {
-			fmt.Println("Running as `dry-run`. Resources wont be created")
+			fmt.Println("Running as `dry-run`. Resources wont be created, only terraform files will be created")
 		}
 
 		services.InitializeTerraformFolders()
 		services.CreateResource(userPrompt, dryRun)
 	},
 	Example: `
-# Example 1: Add a task
+# Example 1: Create a resource with defaults
 go-terra-bot -p "create an azure resource group"
+
+# Example 2: Create a resource with arguments (1)
+go-terra-bot -p "create azure resource group named test in westindia"
+
+# Example 3: Create a resource with arguments (2)
+go-terra-bot -p "create aws vpc with cidr 10.0.0.0/32"
+
+# Example 4: Create a resource in dry-run
+go-terra-bot -p "create an azure resource group --dry-run"
 	`,
 }
 
