@@ -22,7 +22,6 @@ func CreateResource(userPrompt string, dryRun bool) {
 	} else {
 		handleCLIResponse(userPrompt, nil, "please provide a valid prompt. For example `create an aws vpc`")
 	}
-	fmt.Println(jsonMap.ExtraParams)
 	azRG := map[string]string{}
 	//add default values
 	switch jsonMap.TerraformResourceName {
